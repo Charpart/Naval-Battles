@@ -1,0 +1,22 @@
+{
+    "name": "NavalBattles.Unity",
+    "rootNamespace": "",
+    "references": [
+        "NavalBattles.Domain",
+        "NavalBattles.Protocol",
+        "NavalBattles.Transport",
+        "NavalBattles.Server",
+        "NavalBattles.Client",
+        "Fusion.Unity",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
