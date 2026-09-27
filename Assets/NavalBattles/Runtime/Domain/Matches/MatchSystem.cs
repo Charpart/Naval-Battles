@@ -14,14 +14,10 @@ namespace NavalBattles.Runtime.Domain.Matches
             match = null;
 
             if (rules == null)
-            {
                 return false;
-            }
 
             if (TryCreateBoards(rules, seed, out Board firstBoard, out Board secondBoard) == false)
-            {
                 return false;
-            }
 
             PlayerSlot activePlayer = (seed & 1) == 0 ? PlayerSlot.First : PlayerSlot.Second;
             double turnDeadline = serverTime + rules.turnDurationSeconds;
@@ -104,21 +100,23 @@ namespace NavalBattles.Runtime.Domain.Matches
             }
 
             decision = new FireDecision(FireDecisionStatus.Accepted, outcome);
-
             return true;
         }
 
         public static bool TryAdvanceTimeout(MatchState match, double serverTime)
         {
             if (match == null || match.isFinished || serverTime < match.turnDeadline)
-            {
                 return false;
-            }
 
             CompleteCurrentTurn(match);
             StartTurn(match, PlayerSlotUtility.GetOpponent(match.activePlayer), serverTime);
-
             return true;
+        }
+
+        public static void ResetTurnDeadline(MatchState match, double serverTime)
+        {
+            if (match is { isFinished: false })
+                match.turnDeadline = serverTime + match.rules.turnDurationSeconds;
         }
 
         private static void CompleteCurrentTurn(MatchState match)
