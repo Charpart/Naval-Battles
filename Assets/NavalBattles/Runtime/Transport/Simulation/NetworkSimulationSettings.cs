@@ -15,12 +15,12 @@ namespace NavalBattles.Runtime.Transport.Simulation
             double delaySeconds,
             double jitterSeconds,
             double lossProbability,
-            double duplicateProbability)
+            double duplicationProbability)
         {
             this.delaySeconds = Math.Max(0, delaySeconds);
             this.jitterSeconds = Math.Max(0, jitterSeconds);
             this.lossProbability = Math.Max(0, lossProbability);
-            this.duplicationProbability = Math.Max(0, duplicateProbability);
+            this.duplicationProbability = Math.Max(0, duplicationProbability);
         }
     }
 }
