@@ -173,7 +173,7 @@ namespace NavalBattles.Runtime.Server
                 request.commandId,
                 wasAccepted ? RequestStatus.Accepted : RequestStatus.Rejected,
                 FireDecisionStatus2RejectReason(decision.status),
-                (NetworkShotResult)decision.outcome.result,
+                NetworkShotMapper.Convert(decision.outcome.result),
                 decision.outcome.shipLength,
                 snapshot);
             byte[] payload = _responses.Serialize(response);

@@ -1,5 +1,5 @@
 {
-    "name": "NavalBattles.Unity",
+    "name": "NavalBattles.UnityIntegration",
     "rootNamespace": "",
     "references": [
         "NavalBattles.Domain",

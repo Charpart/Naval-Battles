@@ -42,7 +42,7 @@ namespace NavalBattles.Runtime.Server.Snapshots
             NetworkShotState[] shots = new NetworkShotState[board.totalCellCount];
             for (int cellIndex = 0; cellIndex < shots.Length; cellIndex++)
             {
-                shots[cellIndex] = (NetworkShotState)board.GetCellShotState(cellIndex);
+                shots[cellIndex] = NetworkShotMapper.Convert(board.GetCellShotState(cellIndex));
             }
             return shots;
         }

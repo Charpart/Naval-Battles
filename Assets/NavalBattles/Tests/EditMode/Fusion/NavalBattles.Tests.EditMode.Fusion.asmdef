@@ -1,18 +1,16 @@
 {
-    "name": "NavalBattles.Tests.PlayMode",
+    "name": "NavalBattles.Tests.EditMode.Fusion",
     "rootNamespace": "",
     "references": [
-        "NavalBattles.Client",
-        "NavalBattles.Domain",
-        "NavalBattles.Protocol",
         "NavalBattles.Transport",
         "NavalBattles.UnityIntegration",
         "Fusion.Unity",
-        "UniTask",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
