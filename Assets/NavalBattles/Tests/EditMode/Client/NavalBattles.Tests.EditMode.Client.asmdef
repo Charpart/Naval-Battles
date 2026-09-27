@@ -1,11 +1,13 @@
 {
-    "name": "NavalBattles.Tests.EditMode",
+    "name": "NavalBattles.Tests.EditMode.Client",
     "rootNamespace": "",
     "references": [
+        "NavalBattles.Client",
         "NavalBattles.Domain",
         "NavalBattles.Protocol",
-        "NavalBattles.Transport",
         "NavalBattles.Server",
+        "NavalBattles.Transport",
+        "NavalBattles.Tests.EditMode",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

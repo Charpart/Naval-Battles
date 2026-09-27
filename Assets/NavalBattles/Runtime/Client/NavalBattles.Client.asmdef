@@ -1,0 +1,17 @@
+{
+    "name": "NavalBattles.Client",
+    "rootNamespace": "",
+    "references": [
+        "NavalBattles.Protocol",
+        "NavalBattles.Transport"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

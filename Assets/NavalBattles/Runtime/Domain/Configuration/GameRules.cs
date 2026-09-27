@@ -9,11 +9,8 @@ namespace NavalBattles.Runtime.Domain.Configuration
         private readonly ReadOnlyCollection<int> _shipLengths;
 
         public int width { get; }
-
         public int height { get; }
-
         public int cellCount { get; }
-
         public double turnDurationSeconds { get; }
 
         public IReadOnlyList<int> shipLengths => _shipLengths;
@@ -40,21 +37,18 @@ namespace NavalBattles.Runtime.Domain.Configuration
             if (width <= 0 || height <= 0 || (long)width * height > int.MaxValue)
             {
                 validationError = GameRulesValidationError.InvalidBoardSize;
-
                 return false;
             }
 
             if (shipLengths == null || shipLengths.Count == 0)
             {
                 validationError = GameRulesValidationError.EmptyFleet;
-
                 return false;
             }
 
             if (turnDurationSeconds <= 0.0 || double.IsNaN(turnDurationSeconds) || double.IsInfinity(turnDurationSeconds))
             {
                 validationError = GameRulesValidationError.InvalidTurnDuration;
-
                 return false;
             }
 
@@ -69,7 +63,6 @@ namespace NavalBattles.Runtime.Domain.Configuration
                 if (shipLength <= 0 || shipLength > maximumShipLength)
                 {
                     validationError = GameRulesValidationError.InvalidShipLength;
-
                     return false;
                 }
 
@@ -80,13 +73,11 @@ namespace NavalBattles.Runtime.Domain.Configuration
             if (occupiedCellCount > width * height)
             {
                 validationError = GameRulesValidationError.FleetDoesNotFit;
-
                 return false;
             }
 
             rules = new GameRules(width, height, copiedShipLengths, turnDurationSeconds);
             validationError = GameRulesValidationError.None;
-
             return true;
         }
     }
