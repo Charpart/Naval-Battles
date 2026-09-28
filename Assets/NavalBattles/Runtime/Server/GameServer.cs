@@ -60,7 +60,7 @@ namespace NavalBattles.Runtime.Server
         public void Tick(double serverTime)
         {
             if (_sessionRegistry.isFull && MatchSystem.TryAdvanceTimeout(_match, serverTime))
-                BroadcastSnapshots();
+                BroadcastSnapshots(serverTime);
         }
 
         private void RouteMessage(TransportConnectionId connectionId, ClientMessage message, double serverTime)
@@ -72,7 +72,7 @@ namespace NavalBattles.Runtime.Server
                     break;
                 
                 case MessageType.ResumeRequest:
-                    ResumeConnection(connectionId, message);
+                    ResumeConnection(connectionId, message, serverTime);
                     break;
                 
                 case MessageType.FireRequest:
@@ -80,7 +80,7 @@ namespace NavalBattles.Runtime.Server
                     break;
                 
                 case MessageType.StateRequest:
-                    SendState(connectionId, message);
+                    SendState(connectionId, message, serverTime);
                     break;
                 
                 case MessageType.HeartbeatRequest:
@@ -114,15 +114,18 @@ namespace NavalBattles.Runtime.Server
             if (wasAdded)
             {
                 MatchSystem.ResetTurnDeadline(_match, serverTime);
-                SendSessionAcceptedToAll();
+                SendSessionAcceptedToAll(serverTime);
             }
             else
             {
-                SendSessionAccepted(session);
+                SendSessionAccepted(session, serverTime);
             }
         }
 
-        private void ResumeConnection(TransportConnectionId connectionId, ClientMessage message)
+        private void ResumeConnection(
+            TransportConnectionId connectionId,
+            ClientMessage message,
+            double serverTime)
         {
             if (_sessionRegistry.TryResume(message.clientId, connectionId, out PlayerSession session) == false)
             {
@@ -131,7 +134,7 @@ namespace NavalBattles.Runtime.Server
             }
 
             if (_sessionRegistry.isFull)
-                SendSessionAccepted(session);
+                SendSessionAccepted(session, serverTime);
         }
 
         private void ProcessFire(TransportConnectionId connectionId, ClientMessage message, double serverTime)
@@ -155,17 +158,18 @@ namespace NavalBattles.Runtime.Server
                 message.cellIndex,
                 serverTime,
                 out FireDecision decision);
-            SendFireResult(session, message, decision, wasAccepted);
+            SendFireResult(session, message, decision, wasAccepted, serverTime);
 
             if (wasAccepted)
-                BroadcastSnapshots(session.clientId);
+                BroadcastSnapshots(serverTime, session.clientId);
         }
 
         private void SendFireResult(
             PlayerSession session,
             ClientMessage request,
             FireDecision decision,
-            bool wasAccepted)
+            bool wasAccepted,
+            double serverTime)
         {
             PlayerSnapshot snapshot = PlayerSnapshotFactory.Create(_match, session.player, request.commandId);
             ServerMessage response = ServerMessage.CreateFireResult(
@@ -175,7 +179,8 @@ namespace NavalBattles.Runtime.Server
                 FireDecisionStatus2RejectReason(decision.status),
                 NetworkShotMapper.Convert(decision.outcome.result),
                 decision.outcome.shipLength,
-                snapshot);
+                snapshot,
+                serverTime);
             byte[] payload = _responses.Serialize(response);
             session.RecordProcessedCommand(request.commandId, payload);
             _responses.Send(session.connectionId, payload);
@@ -195,49 +200,54 @@ namespace NavalBattles.Runtime.Server
             };
         }
 
-        private void SendState(TransportConnectionId connectionId, ClientMessage message)
+        private void SendState(
+            TransportConnectionId connectionId,
+            ClientMessage message,
+            double serverTime)
         {
             if (TryGetCurrentSession(connectionId, message.clientId, out PlayerSession session) == false)
             {
                 _responses.SendRejected(connectionId, 0, RejectionReason.UnknownSession);
                 return;
             }
-            SendSnapshot(session);
+            SendSnapshot(session, serverTime);
         }
 
-        private void SendSessionAccepted(PlayerSession session)
+        private void SendSessionAccepted(PlayerSession session, double serverTime)
         {
             PlayerSnapshot snapshot = CreateSnapshot(session);
             ServerMessage response = ServerMessage.CreateSessionAccepted(
                 _responses.ReserveMessageId(),
                 NetworkPlayerSlotMapper.Convert(session.player),
                 _definition,
-                snapshot);
+                snapshot,
+                serverTime);
             _responses.Send(session.connectionId, response);
         }
 
-        private void SendSnapshot(PlayerSession session)
+        private void SendSnapshot(PlayerSession session, double serverTime)
         {
             ServerMessage response = ServerMessage.CreateStateSnapshot(
                 _responses.ReserveMessageId(),
-                CreateSnapshot(session));
+                CreateSnapshot(session),
+                serverTime);
             _responses.Send(session.connectionId, response);
         }
 
-        private void BroadcastSnapshots(Guid excludedClientId = default)
+        private void BroadcastSnapshots(double serverTime, Guid excludedClientId = default)
         {
             foreach (PlayerSession session in _sessionRegistry.all)
             {
                 if (session.clientId != excludedClientId)
-                    SendSnapshot(session);
+                    SendSnapshot(session, serverTime);
             }
         }
 
-        private void SendSessionAcceptedToAll()
+        private void SendSessionAcceptedToAll(double serverTime)
         {
             foreach (PlayerSession session in _sessionRegistry.all)
             {
-                SendSessionAccepted(session);
+                SendSessionAccepted(session, serverTime);
             }
         }
 

@@ -20,11 +20,13 @@ namespace NavalBattles.Runtime.Client
         private readonly PendingFireCommand _pendingCommand = new PendingFireCommand();
         private byte[] _sessionPayload;
         private bool _wasSessionAccepted;
+        private double _currentTime;
 
         public ClientConnectionState connectionState { get; private set; }
         public NetworkPlayerSlot player { get; private set; }
         public GameDefinition definition { get; private set; }
         public PlayerSnapshot snapshot { get; private set; }
+        public double localTurnDeadline { get; private set; }
 
         public bool hasPendingCommand => _pendingCommand.exists;
         public RequestStatus lastRequestStatus => _pendingCommand.lastStatus;
@@ -90,6 +92,7 @@ namespace NavalBattles.Runtime.Client
 
         public void Tick(double clientTime)
         {
+            _currentTime = clientTime;
             _recoveryTimer.Advance(clientTime);
 
             if (_recoveryTimer.IsTimedOut(connectionState))
@@ -120,8 +123,12 @@ namespace NavalBattles.Runtime.Client
                     break;
 
                 case MessageType.StateSnapshot:
-                    ApplyIfNewer(message.snapshot);
+                    ApplyIfNewer(message.snapshot, message.serverTime);
                     ClearProcessedPending(message.snapshot);
+                    break;
+
+                case MessageType.HeartbeatResponse:
+                    SynchronizeTurnDeadline(message.serverTime);
                     break;
 
                 case MessageType.RequestRejected:
@@ -145,7 +152,7 @@ namespace NavalBattles.Runtime.Client
         {
             player = message.player;
             definition = message.definition;
-            ApplyIfNewer(message.snapshot, true);
+            ApplyIfNewer(message.snapshot, message.serverTime, true);
             connectionState = ClientConnectionState.Connected;
             _wasSessionAccepted = true;
             _sessionPayload = null;
@@ -158,17 +165,30 @@ namespace NavalBattles.Runtime.Client
                 message.commandId,
                 message.requestStatus,
                 message.rejectionReason);
-            ApplyIfNewer(message.snapshot);
+            ApplyIfNewer(message.snapshot, message.serverTime);
         }
 
-        private void ApplyIfNewer(PlayerSnapshot receivedSnapshot, bool acceptEqualRevision = false)
+        private void ApplyIfNewer(
+            PlayerSnapshot receivedSnapshot,
+            double serverTime,
+            bool acceptEqualRevision = false)
         {
             if (receivedSnapshot != null &&
                 (snapshot == null || receivedSnapshot.revision > snapshot.revision ||
                     acceptEqualRevision && receivedSnapshot.revision == snapshot.revision))
             {
                 snapshot = receivedSnapshot;
+                SynchronizeTurnDeadline(serverTime);
             }
+        }
+
+        private void SynchronizeTurnDeadline(double serverTime)
+        {
+            if (snapshot == null)
+                return;
+
+            double remainingSeconds = Math.Max(0.0, snapshot.turnDeadline - serverTime);
+            localTurnDeadline = _currentTime + remainingSeconds;
         }
 
         private void ReconcilePendingCommand(PlayerSnapshot receivedSnapshot)

@@ -129,7 +129,12 @@ namespace NavalBattles.Tests.EditMode.Client
             int[] shipLengths = { 3, 2, 2, 1 };
             var definition = new GameDefinition(6, 6, shipLengths, 15.0);
 
-            return ServerMessage.CreateSessionAccepted(1, NetworkPlayerSlot.First, definition, snapshot);
+            return ServerMessage.CreateSessionAccepted(
+                1,
+                NetworkPlayerSlot.First,
+                definition,
+                snapshot,
+                100.0);
         }
 
         private static PlayerSnapshot CreateSnapshot(

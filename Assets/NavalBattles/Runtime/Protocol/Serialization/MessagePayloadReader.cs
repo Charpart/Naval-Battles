@@ -129,6 +129,7 @@ namespace NavalBattles.Runtime.Protocol.Serialization
 
             if (_reader.TryReadByte(out byte player) == false ||
                 _snapshotReader.TryReadDefinition(out GameDefinition definition) == false ||
+                _reader.TryReadDouble(out double serverTime) == false ||
                 _snapshotReader.TryReadSnapshot(out PlayerSnapshot snapshot) == false)
             {
                 return false;
@@ -137,6 +138,7 @@ namespace NavalBattles.Runtime.Protocol.Serialization
             message = CreateServerMessage(
                 header,
                 player: (NetworkPlayerSlot)player,
+                serverTime: serverTime,
                 definition: definition,
                 snapshot: snapshot);
 
@@ -152,6 +154,7 @@ namespace NavalBattles.Runtime.Protocol.Serialization
                 _reader.TryReadByte(out byte rejection) == false ||
                 _reader.TryReadByte(out byte shotResult) == false ||
                 _reader.TryReadInt32(out int sunkShipLength) == false ||
+                _reader.TryReadDouble(out double serverTime) == false ||
                 _snapshotReader.TryReadSnapshot(out PlayerSnapshot snapshot) == false)
             {
                 return false;
@@ -164,6 +167,7 @@ namespace NavalBattles.Runtime.Protocol.Serialization
                 (RejectionReason)rejection,
                 (NetworkShotResult)shotResult,
                 sunkShipLength,
+                serverTime,
                 snapshot: snapshot);
 
             return true;
@@ -173,12 +177,13 @@ namespace NavalBattles.Runtime.Protocol.Serialization
         {
             message = default;
 
-            if (_snapshotReader.TryReadSnapshot(out PlayerSnapshot snapshot) == false)
+            if (_reader.TryReadDouble(out double serverTime) == false ||
+                _snapshotReader.TryReadSnapshot(out PlayerSnapshot snapshot) == false)
             {
                 return false;
             }
 
-            message = CreateServerMessage(header, snapshot: snapshot);
+            message = CreateServerMessage(header, serverTime: serverTime, snapshot: snapshot);
 
             return true;
         }

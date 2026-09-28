@@ -108,6 +108,22 @@ namespace NavalBattles.Tests.EditMode.Server
         }
 
         [Test]
+        public void Receive_WhenSessionIsAccepted_IncludesCurrentServerTime()
+        {
+            // Arrange
+            var firstConnection = new TransportConnectionId(10);
+            var secondConnection = new TransportConnectionId(20);
+            Connect(Guid.NewGuid(), firstConnection, 1, SERVER_TIME);
+
+            // Act
+            Connect(Guid.NewGuid(), secondConnection, 2, SERVER_TIME + 100.0);
+
+            // Assert
+            ServerMessage response = DecodeLastFor(firstConnection);
+            Assert.That(response.serverTime, Is.EqualTo(SERVER_TIME + 100.0));
+        }
+
+        [Test]
         public void Receive_WhenFireRequestIsDuplicated_ChangesMatchExactlyOnceAndRepeatsResult()
         {
             // Arrange

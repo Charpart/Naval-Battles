@@ -74,7 +74,8 @@ namespace NavalBattles.Tests.EditMode.Client
                 RejectionReason.None,
                 NetworkShotResult.Miss,
                 0,
-                CreateSnapshot(2, 11));
+                CreateSnapshot(2, 11),
+                100.0);
 
             // Act
             _client.Receive(_serializer.Serialize(unrelatedResult));
@@ -96,7 +97,8 @@ namespace NavalBattles.Tests.EditMode.Client
                 RejectionReason.InvalidTarget,
                 NetworkShotResult.Invalid,
                 0,
-                CreateSnapshot(1, 10));
+                CreateSnapshot(1, 10),
+                100.0);
 
             // Act
             _client.Receive(_serializer.Serialize(result));
@@ -112,11 +114,11 @@ namespace NavalBattles.Tests.EditMode.Client
             PlayerSnapshot current = CreateSnapshot(3, 30);
             PlayerSnapshot older = CreateSnapshot(2, 20);
             PlayerSnapshot equal = CreateSnapshot(3, 99);
-            _client.Receive(_serializer.Serialize(ServerMessage.CreateStateSnapshot(20, current)));
+            _client.Receive(_serializer.Serialize(ServerMessage.CreateStateSnapshot(20, current, 100.0)));
 
             // Act
-            _client.Receive(_serializer.Serialize(ServerMessage.CreateStateSnapshot(21, older)));
-            _client.Receive(_serializer.Serialize(ServerMessage.CreateStateSnapshot(22, equal)));
+            _client.Receive(_serializer.Serialize(ServerMessage.CreateStateSnapshot(21, older, 100.0)));
+            _client.Receive(_serializer.Serialize(ServerMessage.CreateStateSnapshot(22, equal, 100.0)));
 
             // Assert
             Assert.That(_client.snapshot.revision, Is.EqualTo(3));
@@ -128,7 +130,7 @@ namespace NavalBattles.Tests.EditMode.Client
         {
             // Arrange
             _client.Receive(_serializer.Serialize(
-                ServerMessage.CreateStateSnapshot(20, CreateSnapshot(4, 40))));
+                ServerMessage.CreateStateSnapshot(20, CreateSnapshot(4, 40), 100.0)));
             _client.Connect();
             ClientMessage resumeRequest = DecodeClient(_transport.sentMessages[^1].payload);
             PlayerSnapshot resumedSnapshot = CreateSnapshot(4, 41);
@@ -148,7 +150,12 @@ namespace NavalBattles.Tests.EditMode.Client
             int[] shipLengths = { 3, 2, 2, 1 };
             var definition = new GameDefinition(6, 6, shipLengths, 15.0);
 
-            return ServerMessage.CreateSessionAccepted(1, NetworkPlayerSlot.First, definition, snapshot);
+            return ServerMessage.CreateSessionAccepted(
+                1,
+                NetworkPlayerSlot.First,
+                definition,
+                snapshot,
+                100.0);
         }
 
         private static PlayerSnapshot CreateSnapshot(

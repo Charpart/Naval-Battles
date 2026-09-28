@@ -99,10 +99,11 @@ namespace NavalBattles.Tests.EditMode.Protocol.Serialization
                         RejectionReason.None,
                         NetworkShotResult.Sunk,
                         2,
-                        snapshot);
+                        snapshot,
+                        40.0);
 
                 case MessageType.StateSnapshot:
-                    return ServerMessage.CreateStateSnapshot(28, snapshot);
+                    return ServerMessage.CreateStateSnapshot(28, snapshot, 40.0);
 
                 case MessageType.HeartbeatResponse:
                     return ServerMessage.CreateHeartbeatResponse(28, 42.5);

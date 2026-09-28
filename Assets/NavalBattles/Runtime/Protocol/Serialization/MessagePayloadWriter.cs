@@ -39,6 +39,7 @@ namespace NavalBattles.Runtime.Protocol.Serialization
                 case MessageType.SessionAccepted:
                     writer.Write((byte)message.player);
                     WriteDefinition(writer, message.definition);
+                    writer.Write(message.serverTime);
                     WriteSnapshot(writer, message.snapshot);
                     break;
 
@@ -47,6 +48,7 @@ namespace NavalBattles.Runtime.Protocol.Serialization
                     break;
 
                 case MessageType.StateSnapshot:
+                    writer.Write(message.serverTime);
                     WriteSnapshot(writer, message.snapshot);
                     break;
 
@@ -70,6 +72,7 @@ namespace NavalBattles.Runtime.Protocol.Serialization
             writer.Write((byte)message.rejectionReason);
             writer.Write((byte)message.shotResult);
             writer.Write(message.sunkShipLength);
+            writer.Write(message.serverTime);
             WriteSnapshot(writer, message.snapshot);
         }
 

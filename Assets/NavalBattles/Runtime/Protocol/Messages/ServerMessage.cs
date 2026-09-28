@@ -50,7 +50,8 @@ namespace NavalBattles.Runtime.Protocol.Messages
             ulong messageId,
             NetworkPlayerSlot player,
             GameDefinition definition,
-            PlayerSnapshot snapshot)
+            PlayerSnapshot snapshot,
+            double serverTime)
         {
             return new ServerMessage(
                 MessageType.SessionAccepted,
@@ -61,7 +62,7 @@ namespace NavalBattles.Runtime.Protocol.Messages
                 RejectionReason.None,
                 NetworkShotResult.Invalid,
                 0,
-                0.0,
+                serverTime,
                 definition,
                 snapshot);
         }
@@ -73,7 +74,8 @@ namespace NavalBattles.Runtime.Protocol.Messages
             RejectionReason rejectionReason,
             NetworkShotResult shotResult,
             int sunkShipLength,
-            PlayerSnapshot snapshot)
+            PlayerSnapshot snapshot,
+            double serverTime)
         {
             return new ServerMessage(
                 MessageType.FireResult,
@@ -84,12 +86,15 @@ namespace NavalBattles.Runtime.Protocol.Messages
                 rejectionReason,
                 shotResult,
                 sunkShipLength,
-                0.0,
+                serverTime,
                 null,
                 snapshot);
         }
 
-        public static ServerMessage CreateStateSnapshot(ulong messageId, PlayerSnapshot snapshot)
+        public static ServerMessage CreateStateSnapshot(
+            ulong messageId,
+            PlayerSnapshot snapshot,
+            double serverTime)
         {
             return new ServerMessage(
                 MessageType.StateSnapshot,
@@ -100,7 +105,7 @@ namespace NavalBattles.Runtime.Protocol.Messages
                 RejectionReason.None,
                 NetworkShotResult.Invalid,
                 0,
-                0.0,
+                serverTime,
                 null,
                 snapshot);
         }

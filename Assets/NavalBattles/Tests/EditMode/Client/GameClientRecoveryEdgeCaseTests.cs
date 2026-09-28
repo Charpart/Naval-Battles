@@ -115,7 +115,8 @@ namespace NavalBattles.Tests.EditMode.Client
                 RejectionReason.TurnExpired,
                 NetworkShotResult.Invalid,
                 0,
-                CreateSnapshot(7, 20, fire.commandId));
+                CreateSnapshot(7, 20, fire.commandId),
+                100.0);
 
             // Act
             _client.Receive(_serializer.Serialize(rejection));
@@ -143,7 +144,8 @@ namespace NavalBattles.Tests.EditMode.Client
                 1,
                 NetworkPlayerSlot.First,
                 definition,
-                snapshot);
+                snapshot,
+                100.0);
             _client.Receive(_serializer.Serialize(accepted));
         }
 

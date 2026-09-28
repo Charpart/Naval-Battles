@@ -6,7 +6,7 @@ namespace NavalBattles.Runtime.Protocol.Serialization
 {
     public sealed class BinaryProtocolSerializer : IProtocolSerializer
     {
-        private const byte PROTOCOL_VERSION = 1;
+        private const byte PROTOCOL_VERSION = 2;
         private const int HEADER_LENGTH = 30;
 
         public byte[] Serialize(ClientMessage message)

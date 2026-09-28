@@ -1,0 +1,29 @@
+{
+    "name": "NavalBattles.Tests.EditMode.UnityIntegration",
+    "rootNamespace": "",
+    "references": [
+        "NavalBattles.Domain",
+        "NavalBattles.Client",
+        "NavalBattles.Protocol",
+        "NavalBattles.Transport",
+        "NavalBattles.UnityIntegration",
+        "NavalBattles.Tests.EditMode",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -56,7 +56,7 @@ namespace NavalBattles.Tests.EditMode.Protocol.Serialization
             byte[] encodedClientId = new byte[16];
             Array.Copy(bytes, 10, encodedClientId, 0, encodedClientId.Length);
             int payloadLength = ReadInt32LittleEndian(bytes, 26);
-            Assert.That(bytes[0], Is.EqualTo(1));
+            Assert.That(bytes[0], Is.EqualTo(2));
             Assert.That(new Guid(encodedClientId), Is.EqualTo(clientId));
             Assert.That(payloadLength, Is.EqualTo(bytes.Length - 30));
         }
@@ -103,7 +103,8 @@ namespace NavalBattles.Tests.EditMode.Protocol.Serialization
                 28,
                 NetworkPlayerSlot.First,
                 definition,
-                snapshot);
+                snapshot,
+                40.0);
 
             // Act
             byte[] payload = _serializer.Serialize(source);
