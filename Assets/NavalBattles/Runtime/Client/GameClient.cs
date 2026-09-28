@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NavalBattles.Runtime.Client.Commands;
 using NavalBattles.Runtime.Client.Connection;
 using NavalBattles.Runtime.Client.Identity;
@@ -11,16 +12,25 @@ namespace NavalBattles.Runtime.Client
 {
     public sealed class GameClient
     {
+        private const int MAX_PENDING_TIME_SAMPLES = 32;
+
         private readonly IMessageTransport _transport;
         private readonly IClientIdentityStore _identityStore;
         private readonly IProtocolSerializer _serializer;
         private readonly TransportConnectionId _serverConnectionId;
         private readonly ClientRecoveryTimer _recoveryTimer;
+        private readonly double _timeSynchronizationIntervalSeconds;
+        private readonly double _timeSampleMaxAgeSeconds;
         private ulong _nextMessageId = 1;
         private readonly PendingFireCommand _pendingCommand = new PendingFireCommand();
+        private readonly Dictionary<ulong, double> _timeSampleRequests = new Dictionary<ulong, double>();
         private byte[] _sessionPayload;
         private bool _wasSessionAccepted;
+        private bool _hasServerClockOffset;
         private double _currentTime;
+        private double _lastAppliedTimeSampleRequestTime = double.NegativeInfinity;
+        private double _nextTimeSampleTime;
+        private double _serverClockOffset;
 
         public ClientConnectionState connectionState { get; private set; }
         public NetworkPlayerSlot player { get; private set; }
@@ -43,6 +53,8 @@ namespace NavalBattles.Runtime.Client
             _identityStore = identityStore ?? throw new ArgumentNullException(nameof(identityStore));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _recoveryTimer = new ClientRecoveryTimer(recoverySettings);
+            _timeSynchronizationIntervalSeconds = recoverySettings.heartbeatIntervalSeconds;
+            _timeSampleMaxAgeSeconds = recoverySettings.heartbeatTimeoutSeconds;
             _serverConnectionId = serverConnectionId;
             connectionState = ClientConnectionState.Disconnected;
             player = NetworkPlayerSlot.None;
@@ -50,6 +62,8 @@ namespace NavalBattles.Runtime.Client
 
         public void Connect()
         {
+            _timeSampleRequests.Clear();
+            _nextTimeSampleTime = _currentTime;
             _recoveryTimer.RecordServerActivity();
             ClientMessage request;
 
@@ -92,8 +106,7 @@ namespace NavalBattles.Runtime.Client
 
         public void Tick(double clientTime)
         {
-            _currentTime = clientTime;
-            _recoveryTimer.Advance(clientTime);
+            AdvanceTime(clientTime);
 
             if (_recoveryTimer.IsTimedOut(connectionState))
             {
@@ -108,6 +121,13 @@ namespace NavalBattles.Runtime.Client
 
         public void Receive(ReadOnlyMemory<byte> payload)
         {
+            Receive(payload, _currentTime);
+        }
+
+        public void Receive(ReadOnlyMemory<byte> payload, double clientTime)
+        {
+            AdvanceTime(clientTime);
+
             if (_serializer.TryDeserializeServer(payload, out ServerMessage message, out _) == false)
                 return;
 
@@ -128,7 +148,7 @@ namespace NavalBattles.Runtime.Client
                     break;
 
                 case MessageType.HeartbeatResponse:
-                    SynchronizeTurnDeadline(message.serverTime);
+                    ApplyTimeSample(message.messageId, message.serverTime);
                     break;
 
                 case MessageType.RequestRejected:
@@ -138,6 +158,12 @@ namespace NavalBattles.Runtime.Client
                         message.rejectionReason);
                     break;
             }
+        }
+
+        private void AdvanceTime(double clientTime)
+        {
+            _currentTime = clientTime;
+            _recoveryTimer.Advance(clientTime);
         }
 
         private bool CanFire()
@@ -187,8 +213,34 @@ namespace NavalBattles.Runtime.Client
             if (snapshot == null)
                 return;
 
+            if (_hasServerClockOffset)
+            {
+                localTurnDeadline = snapshot.turnDeadline - _serverClockOffset;
+                return;
+            }
+
             double remainingSeconds = Math.Max(0.0, snapshot.turnDeadline - serverTime);
             localTurnDeadline = _currentTime + remainingSeconds;
+        }
+
+        private void ApplyTimeSample(ulong messageId, double serverTime)
+        {
+            if (_timeSampleRequests.Remove(messageId, out double requestTime) == false)
+                return;
+
+            double roundTripSeconds = Math.Max(0.0, _currentTime - requestTime);
+
+            if (roundTripSeconds > _timeSampleMaxAgeSeconds ||
+                requestTime <= _lastAppliedTimeSampleRequestTime)
+            {
+                return;
+            }
+
+            double localTimeAtServer = requestTime + roundTripSeconds * 0.5;
+            _serverClockOffset = serverTime - localTimeAtServer;
+            _hasServerClockOffset = true;
+            _lastAppliedTimeSampleRequestTime = requestTime;
+            SynchronizeTurnDeadline(serverTime);
         }
 
         private void ReconcilePendingCommand(PlayerSnapshot receivedSnapshot)
@@ -209,10 +261,21 @@ namespace NavalBattles.Runtime.Client
 
         private void SendHeartbeatIfDue()
         {
-            if (_recoveryTimer.IsHeartbeatDue(connectionState) == false)
-                return;
+            bool isTimeSampleDue = connectionState == ClientConnectionState.Connected &&
+                _currentTime >= _nextTimeSampleTime;
 
-            Send(ClientMessage.CreateHeartbeatRequest(_identityStore.clientId, NextMessageId()));
+            if (isTimeSampleDue == false &&
+                _recoveryTimer.IsHeartbeatDue(connectionState) == false)
+            {
+                return;
+            }
+
+            ClientMessage heartbeat = ClientMessage.CreateHeartbeatRequest(
+                _identityStore.clientId,
+                NextMessageId());
+            RecordTimeSampleRequest(heartbeat.messageId);
+            Send(heartbeat);
+            _nextTimeSampleTime = _currentTime + _timeSynchronizationIntervalSeconds;
             if (connectionState == ClientConnectionState.Connected && snapshot != null)
             {
                 Send(ClientMessage.CreateStateRequest(
@@ -221,6 +284,24 @@ namespace NavalBattles.Runtime.Client
                     snapshot.revision));
             }
             _recoveryTimer.RecordHeartbeatSent();
+        }
+
+        private void RecordTimeSampleRequest(ulong messageId)
+        {
+            if (_timeSampleRequests.Count >= MAX_PENDING_TIME_SAMPLES)
+            {
+                ulong oldestMessageId = ulong.MaxValue;
+
+                foreach (ulong pendingMessageId in _timeSampleRequests.Keys)
+                {
+                    if (pendingMessageId < oldestMessageId)
+                        oldestMessageId = pendingMessageId;
+                }
+
+                _timeSampleRequests.Remove(oldestMessageId);
+            }
+
+            _timeSampleRequests.Add(messageId, _currentTime);
         }
 
         private void RetrySessionIfDue()

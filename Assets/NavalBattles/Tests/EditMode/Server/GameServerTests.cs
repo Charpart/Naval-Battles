@@ -125,6 +125,22 @@ namespace NavalBattles.Tests.EditMode.Server
         }
 
         [Test]
+        public void Receive_WhenHeartbeatArrives_EchoesRequestMessageId()
+        {
+            // Arrange
+            var connection = new TransportConnectionId(10);
+            ClientMessage heartbeat = ClientMessage.CreateHeartbeatRequest(Guid.NewGuid(), 77);
+
+            // Act
+            _server.Receive(connection, _serializer.Serialize(heartbeat), SERVER_TIME);
+
+            // Assert
+            ServerMessage response = DecodeLastFor(connection);
+            Assert.That(response.type, Is.EqualTo(MessageType.HeartbeatResponse));
+            Assert.That(response.messageId, Is.EqualTo(heartbeat.messageId));
+        }
+
+        [Test]
         public void Receive_WhenFireRequestIsDuplicated_ChangesMatchExactlyOnceAndRepeatsResult()
         {
             // Arrange

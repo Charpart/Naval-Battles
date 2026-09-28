@@ -95,7 +95,7 @@ namespace NavalBattles.Runtime.Server
                     break;
                 
                 case MessageType.HeartbeatRequest:
-                    SendHeartbeat(connectionId, serverTime);
+                    SendHeartbeat(connectionId, message, serverTime);
                     break;
                 
                 default:
@@ -262,9 +262,12 @@ namespace NavalBattles.Runtime.Server
             }
         }
 
-        private void SendHeartbeat(TransportConnectionId connectionId, double serverTime)
+        private void SendHeartbeat(
+            TransportConnectionId connectionId,
+            ClientMessage request,
+            double serverTime)
         {
-            _responses.SendHeartbeat(connectionId, serverTime);
+            _responses.SendHeartbeat(connectionId, request.messageId, serverTime);
         }
 
         private bool TryGetCurrentSession(

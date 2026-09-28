@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NavalBattles.Runtime.Client;
 using NavalBattles.Runtime.Client.Connection;
 using NavalBattles.Runtime.Client.Identity;
@@ -145,6 +146,160 @@ namespace NavalBattles.Tests.EditMode.Client
             Assert.That(_client.connectionState, Is.EqualTo(ClientConnectionState.Connected));
         }
 
+        [Test]
+        public void Receive_WhenHeartbeatResponseIsDelayed_MapsDeadlineUsingRoundTripMidpoint()
+        {
+            // Arrange
+            PlayerSnapshot snapshot = CreateSnapshot(2, 10, turnDeadline: 115.0);
+            _client.Receive(_serializer.Serialize(
+                ServerMessage.CreateStateSnapshot(2, snapshot, 100.0)));
+            _client.Tick(102.0);
+            ClientMessage heartbeat = DecodeClient(_transport.sentMessages[0].payload);
+            Assert.That(heartbeat.type, Is.EqualTo(MessageType.HeartbeatRequest));
+            _client.Tick(104.0);
+
+            // Act
+            _client.Receive(_serializer.Serialize(
+                ServerMessage.CreateHeartbeatResponse(heartbeat.messageId, 103.0)));
+
+            // Assert
+            Assert.That(_client.localTurnDeadline, Is.EqualTo(115.0).Within(0.001));
+        }
+
+        [Test]
+        public void Receive_WithDeliveryTime_UsesExactTimeForRoundTripSample()
+        {
+            // Arrange
+            PlayerSnapshot snapshot = CreateSnapshot(2, 10, turnDeadline: 115.0);
+            _client.Receive(_serializer.Serialize(
+                ServerMessage.CreateStateSnapshot(2, snapshot, 100.0)));
+            _client.Tick(102.0);
+            ClientMessage heartbeat = DecodeClient(_transport.sentMessages[0].payload);
+
+            // Act
+            _client.Receive(
+                _serializer.Serialize(
+                    ServerMessage.CreateHeartbeatResponse(heartbeat.messageId, 103.0)),
+                104.0);
+
+            // Assert
+            Assert.That(_client.localTurnDeadline, Is.EqualTo(115.0).Within(0.001));
+        }
+
+        [Test]
+        public void Receive_WhenNewSnapshotIsDelayed_KeepsSynchronizedServerDeadline()
+        {
+            // Arrange
+            PlayerSnapshot current = CreateSnapshot(2, 10, turnDeadline: 115.0);
+            _client.Receive(_serializer.Serialize(
+                ServerMessage.CreateStateSnapshot(2, current, 100.0)));
+            _client.Tick(102.0);
+            ClientMessage heartbeat = DecodeClient(_transport.sentMessages[0].payload);
+            _client.Tick(104.0);
+            _client.Receive(_serializer.Serialize(
+                ServerMessage.CreateHeartbeatResponse(heartbeat.messageId, 103.0)));
+            _client.Tick(107.0);
+            PlayerSnapshot nextTurn = CreateSnapshot(3, 11, turnDeadline: 120.0);
+
+            // Act
+            _client.Receive(_serializer.Serialize(
+                ServerMessage.CreateStateSnapshot(3, nextTurn, 105.0)));
+
+            // Assert
+            Assert.That(_client.localTurnDeadline, Is.EqualTo(120.0).Within(0.001));
+        }
+
+        [Test]
+        public void Tick_WhenServerTrafficIsContinuous_StillSendsTimeSampleHeartbeat()
+        {
+            // Arrange
+            PlayerSnapshot snapshot = CreateSnapshot(1, 10, turnDeadline: 115.0);
+            _client.Receive(
+                _serializer.Serialize(ServerMessage.CreateStateSnapshot(2, snapshot, 101.0)),
+                101.0);
+
+            // Act
+            _client.Tick(101.0);
+            _client.Receive(
+                _serializer.Serialize(ServerMessage.CreateStateSnapshot(3, snapshot, 102.0)),
+                102.0);
+            _client.Tick(102.0);
+            _client.Receive(
+                _serializer.Serialize(ServerMessage.CreateStateSnapshot(4, snapshot, 103.0)),
+                103.0);
+            _client.Tick(103.0);
+            _client.Receive(
+                _serializer.Serialize(ServerMessage.CreateStateSnapshot(5, snapshot, 104.0)),
+                104.0);
+            _client.Tick(104.0);
+
+            // Assert
+            Assert.That(DecodeSent(MessageType.HeartbeatRequest), Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void Receive_WhenOlderTimeSampleArrivesLast_KeepsNewerClockOffset()
+        {
+            // Arrange
+            PlayerSnapshot snapshot = CreateSnapshot(2, 10, turnDeadline: 115.0);
+            _client.Receive(_serializer.Serialize(
+                ServerMessage.CreateStateSnapshot(2, snapshot, 100.0)));
+            _client.Tick(102.0);
+            _client.Tick(104.0);
+            List<ClientMessage> heartbeats = DecodeSent(MessageType.HeartbeatRequest);
+            ClientMessage older = heartbeats[0];
+            ClientMessage newer = heartbeats[1];
+            _client.Receive(
+                _serializer.Serialize(ServerMessage.CreateHeartbeatResponse(newer.messageId, 104.0)),
+                104.0);
+
+            // Act
+            _client.Receive(
+                _serializer.Serialize(ServerMessage.CreateHeartbeatResponse(older.messageId, 103.0)),
+                105.0);
+
+            // Assert
+            Assert.That(_client.localTurnDeadline, Is.EqualTo(115.0).Within(0.001));
+        }
+
+        [Test]
+        public void Receive_WhenTimeSampleIsExpired_IgnoresClockOffset()
+        {
+            // Arrange
+            PlayerSnapshot snapshot = CreateSnapshot(2, 10, turnDeadline: 115.0);
+            _client.Receive(_serializer.Serialize(
+                ServerMessage.CreateStateSnapshot(2, snapshot, 100.0)));
+            _client.Tick(102.0);
+            ClientMessage heartbeat = DecodeSent(MessageType.HeartbeatRequest)[0];
+
+            // Act
+            _client.Receive(
+                _serializer.Serialize(ServerMessage.CreateHeartbeatResponse(heartbeat.messageId, 103.0)),
+                110.0);
+
+            // Assert
+            Assert.That(_client.localTurnDeadline, Is.EqualTo(115.0).Within(0.001));
+        }
+
+        [Test]
+        public void Receive_WhenServerClockHasDifferentOrigin_MapsDeadlineToLocalClock()
+        {
+            // Arrange
+            PlayerSnapshot snapshot = CreateSnapshot(2, 10, turnDeadline: 65.0);
+            _client.Receive(_serializer.Serialize(
+                ServerMessage.CreateStateSnapshot(2, snapshot, 50.0)));
+            _client.Tick(102.0);
+            ClientMessage heartbeat = DecodeSent(MessageType.HeartbeatRequest)[0];
+
+            // Act
+            _client.Receive(
+                _serializer.Serialize(ServerMessage.CreateHeartbeatResponse(heartbeat.messageId, 53.0)),
+                104.0);
+
+            // Assert
+            Assert.That(_client.localTurnDeadline, Is.EqualTo(115.0).Within(0.001));
+        }
+
         private static ServerMessage CreateSessionAccepted(PlayerSnapshot snapshot)
         {
             int[] shipLengths = { 3, 2, 2, 1 };
@@ -161,7 +316,8 @@ namespace NavalBattles.Tests.EditMode.Client
         private static PlayerSnapshot CreateSnapshot(
             ulong revision,
             ulong turnId,
-            ulong lastProcessedCommandId = 0)
+            ulong lastProcessedCommandId = 0,
+            double turnDeadline = 100.0)
         {
             var ownShipIndices = new sbyte[36];
             var ownShots = new NetworkShotState[36];
@@ -175,7 +331,7 @@ namespace NavalBattles.Tests.EditMode.Client
                 NetworkPlayerSlot.First,
                 NetworkPlayerSlot.First,
                 NetworkPlayerSlot.None,
-                100.0,
+                turnDeadline,
                 lastProcessedCommandId,
                 ownShipIndices,
                 ownShots,
@@ -193,6 +349,21 @@ namespace NavalBattles.Tests.EditMode.Client
             Assert.That(wasDecoded, Is.True, error.ToString());
 
             return message;
+        }
+
+        private List<ClientMessage> DecodeSent(MessageType type)
+        {
+            var messages = new List<ClientMessage>();
+
+            for (int index = 0; index < _transport.sentMessages.Count; index++)
+            {
+                ClientMessage message = DecodeClient(_transport.sentMessages[index].payload);
+
+                if (message.type == type)
+                    messages.Add(message);
+            }
+
+            return messages;
         }
 
         private sealed class FakeClientIdentityStore : IClientIdentityStore

@@ -75,12 +75,15 @@ namespace NavalBattles.Tests.EditMode.Client
             // Arrange
             _client.TryFire(3);
             ClientMessage original = DecodeClient(_transport.sentMessages[0].payload);
+            _transport.Clear();
 
             // Act
             _client.Tick(101.0);
 
             // Assert
-            ClientMessage retry = DecodeClient(_transport.sentMessages[1].payload);
+            ClientMessage retry = _transport.sentMessages
+                .Select(message => DecodeClient(message.payload))
+                .Single(message => message.type == MessageType.FireRequest);
             Assert.That(retry.commandId, Is.EqualTo(original.commandId));
             Assert.That(retry.messageId, Is.EqualTo(original.messageId));
         }

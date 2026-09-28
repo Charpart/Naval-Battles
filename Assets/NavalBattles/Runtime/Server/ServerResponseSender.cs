@@ -36,9 +36,14 @@ namespace NavalBattles.Runtime.Server
             _transport.Send(connectionId, payload);
         }
 
-        public void SendHeartbeat(TransportConnectionId connectionId, double serverTime)
+        public void SendHeartbeat(
+            TransportConnectionId connectionId,
+            ulong requestMessageId,
+            double serverTime)
         {
-            ServerMessage response = ServerMessage.CreateHeartbeatResponse(ReserveMessageId(), serverTime);
+            ServerMessage response = ServerMessage.CreateHeartbeatResponse(
+                requestMessageId,
+                serverTime);
             Send(connectionId, response);
         }
         

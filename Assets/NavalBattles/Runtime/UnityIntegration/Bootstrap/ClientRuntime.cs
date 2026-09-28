@@ -17,6 +17,7 @@ namespace NavalBattles.Runtime.UnityIntegration.Bootstrap
         private static readonly TransportConnectionId ServerConnection = new TransportConnectionId(0);
         private readonly FusionPeer _peer;
         private readonly NetworkSimulationTransport _simulationTransport;
+        private double _currentTime;
 
         public GameClient client { get; }
 
@@ -55,6 +56,7 @@ namespace NavalBattles.Runtime.UnityIntegration.Bootstrap
 
         public void Tick(double clientTime)
         {
+            _currentTime = clientTime;
             _simulationTransport.Tick(clientTime);
             client.Tick(clientTime);
         }
@@ -79,7 +81,7 @@ namespace NavalBattles.Runtime.UnityIntegration.Bootstrap
 
         private void OnReceived(TransportConnectionId source, ReadOnlyMemory<byte> payload)
         {
-            client.Receive(payload);
+            client.Receive(payload, _currentTime);
         }
     }
 }
