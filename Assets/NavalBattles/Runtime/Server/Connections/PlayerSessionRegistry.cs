@@ -17,6 +17,19 @@ namespace NavalBattles.Runtime.Server.Connections
 
         public IEnumerable<PlayerSession> all => _sessionsByClient.Values;
 
+        public bool HasPlayer(PlayerSlot player)
+        {
+            foreach (PlayerSession session in _sessionsByClient.Values)
+            {
+                if (session.player == player)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool TryAccept(
             Guid clientId,
             TransportConnectionId connectionId,

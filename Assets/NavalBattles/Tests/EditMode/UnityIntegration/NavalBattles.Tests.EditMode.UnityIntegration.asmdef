@@ -5,9 +5,11 @@
         "NavalBattles.Domain",
         "NavalBattles.Client",
         "NavalBattles.Protocol",
+        "NavalBattles.Server",
         "NavalBattles.Transport",
         "NavalBattles.UnityIntegration",
         "NavalBattles.Tests.EditMode",
+        "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

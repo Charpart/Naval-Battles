@@ -84,6 +84,7 @@ namespace NavalBattles.Tests.PlayMode.Fusion
             await WaitForRevisionAsync(initialRevision + 2);
 
             // Assert
+            Assert.That(_server.server, Is.Not.Null);
             Assert.That(_server.client, Is.Null);
             Assert.That(_firstClient.client.player, Is.Not.EqualTo(_secondClient.client.player));
             Assert.That(_firstClient.client.snapshot.ownShipIndices, Has.Some.GreaterThanOrEqualTo(0));

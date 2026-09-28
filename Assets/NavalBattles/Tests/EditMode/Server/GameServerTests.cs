@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NavalBattles.Runtime.Domain.Configuration;
 using NavalBattles.Runtime.Protocol.Messages;
 using NavalBattles.Runtime.Protocol.Serialization;
+using NavalBattles.Runtime.Protocol.Snapshots;
 using NavalBattles.Runtime.Server;
 using NavalBattles.Runtime.Transport;
 using NavalBattles.Tests.EditMode.Fakes;
@@ -178,6 +179,59 @@ namespace NavalBattles.Tests.EditMode.Server
             Assert.That(resumedSession.type, Is.EqualTo(MessageType.SessionAccepted));
             Assert.That(resumedSession.player, Is.EqualTo(initialSession.player));
             Assert.That(_server.connectedPlayerCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GetPlayerSnapshot_ForBothPlayers_ReturnsEachCompleteOwnBoard()
+        {
+            // Arrange
+            Connect(Guid.NewGuid(), new TransportConnectionId(10), 1);
+            Connect(Guid.NewGuid(), new TransportConnectionId(20), 2);
+
+            // Act
+            PlayerSnapshot first = _server.GetPlayerSnapshot(NetworkPlayerSlot.First);
+            PlayerSnapshot second = _server.GetPlayerSnapshot(NetworkPlayerSlot.Second);
+
+            // Assert
+            Assert.That(first.player, Is.EqualTo(NetworkPlayerSlot.First));
+            Assert.That(second.player, Is.EqualTo(NetworkPlayerSlot.Second));
+            Assert.That(first.ownShipIndices, Has.Some.GreaterThanOrEqualTo(0));
+            Assert.That(second.ownShipIndices, Has.Some.GreaterThanOrEqualTo(0));
+            Assert.That(first.ownShipIndices, Has.Count.EqualTo(36));
+            Assert.That(second.ownShipIndices, Has.Count.EqualTo(36));
+        }
+
+        [Test]
+        public void HasPlayer_BeforeAndAfterConnections_ReportsOccupiedSlots()
+        {
+            // Assert
+            Assert.That(_server.HasPlayer(NetworkPlayerSlot.First), Is.False);
+            Assert.That(_server.HasPlayer(NetworkPlayerSlot.Second), Is.False);
+
+            // Act
+            Connect(Guid.NewGuid(), new TransportConnectionId(10), 1);
+
+            // Assert
+            Assert.That(_server.HasPlayer(NetworkPlayerSlot.First), Is.True);
+            Assert.That(_server.HasPlayer(NetworkPlayerSlot.Second), Is.False);
+
+            // Act
+            Connect(Guid.NewGuid(), new TransportConnectionId(20), 2);
+
+            // Assert
+            Assert.That(_server.HasPlayer(NetworkPlayerSlot.Second), Is.True);
+        }
+
+        [TestCase(NetworkPlayerSlot.None)]
+        [TestCase((NetworkPlayerSlot)255)]
+        public void GetPlayerSnapshot_WithInvalidSlot_ThrowsArgumentOutOfRangeException(
+            NetworkPlayerSlot player)
+        {
+            // Act
+            TestDelegate getSnapshot = () => _server.GetPlayerSnapshot(player);
+
+            // Assert
+            Assert.That(getSnapshot, Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         private void Connect(Guid clientId, TransportConnectionId connectionId, ulong messageId)

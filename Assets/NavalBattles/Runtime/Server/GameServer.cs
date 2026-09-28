@@ -20,6 +20,7 @@ namespace NavalBattles.Runtime.Server
 
         public ulong stateRevision => _match.revision;
         public int connectedPlayerCount => _sessionRegistry.count;
+        public GameDefinition definition => _definition;
 
         public GameServer(
             GameRules rules,
@@ -61,6 +62,16 @@ namespace NavalBattles.Runtime.Server
         {
             if (_sessionRegistry.isFull && MatchSystem.TryAdvanceTimeout(_match, serverTime))
                 BroadcastSnapshots(serverTime);
+        }
+
+        public bool HasPlayer(NetworkPlayerSlot player)
+        {
+            return _sessionRegistry.HasPlayer(ConvertPlayer(player));
+        }
+
+        public PlayerSnapshot GetPlayerSnapshot(NetworkPlayerSlot player)
+        {
+            return PlayerSnapshotFactory.Create(_match, ConvertPlayer(player), 0);
         }
 
         private void RouteMessage(TransportConnectionId connectionId, ClientMessage message, double serverTime)
@@ -267,6 +278,19 @@ namespace NavalBattles.Runtime.Server
         private PlayerSnapshot CreateSnapshot(PlayerSession session)
         {
             return PlayerSnapshotFactory.Create(_match, session.player, session.lastProcessedCommandId);
+        }
+
+        private static PlayerSlot ConvertPlayer(NetworkPlayerSlot player)
+        {
+            return player switch
+            {
+                NetworkPlayerSlot.First => PlayerSlot.First,
+                NetworkPlayerSlot.Second => PlayerSlot.Second,
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(player),
+                    player,
+                    "Unsupported player slot.")
+            };
         }
     }
 }

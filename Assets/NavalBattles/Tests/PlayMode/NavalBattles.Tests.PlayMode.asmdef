@@ -5,6 +5,7 @@
         "NavalBattles.Client",
         "NavalBattles.Domain",
         "NavalBattles.Protocol",
+        "NavalBattles.Server",
         "NavalBattles.Transport",
         "NavalBattles.UnityIntegration",
         "Fusion.Unity",

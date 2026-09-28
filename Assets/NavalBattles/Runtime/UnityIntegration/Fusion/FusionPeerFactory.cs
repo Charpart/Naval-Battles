@@ -5,12 +5,22 @@ using Fusion;
 using NavalBattles.Runtime.UnityIntegration.Fusion.Transport;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace NavalBattles.Runtime.UnityIntegration.Fusion
 {
     public sealed class FusionPeerFactory
     {
         private const int PLAYER_COUNT = 2;
+        private const int CLIENT_START_RETRY_DELAY_MILLISECONDS = 500;
+        private const double CLIENT_START_TIMEOUT_SECONDS = 10.0;
+        private const string NETWORK_CONFIG_RESOURCE_PATH = "NetworkProjectConfig";
+#if UNITY_EDITOR
+        private const string NETWORK_CONFIG_ASSET_PATH =
+            "Assets/Photon/Fusion/Resources/NetworkProjectConfig.fusion";
+#endif
 
         public UniTask<FusionPeer> StartServerAsync(
             SessionSettings settings,
@@ -19,11 +29,27 @@ namespace NavalBattles.Runtime.UnityIntegration.Fusion
             return StartPeerAsync(settings, GameMode.Server, cancellationToken);
         }
 
-        public UniTask<FusionPeer> StartClientAsync(
+        public async UniTask<FusionPeer> StartClientAsync(
             SessionSettings settings,
             CancellationToken cancellationToken)
         {
-            return StartPeerAsync(settings, GameMode.Client, cancellationToken);
+            double deadline = Time.realtimeSinceStartupAsDouble + CLIENT_START_TIMEOUT_SECONDS;
+
+            while (true)
+            {
+                try
+                {
+                    return await StartPeerAsync(settings, GameMode.Client, cancellationToken);
+                }
+                catch (FusionStartException exception) when (
+                    exception.shutdownReason == ShutdownReason.GameNotFound
+                    && Time.realtimeSinceStartupAsDouble < deadline)
+                {
+                    await UniTask.Delay(
+                        CLIENT_START_RETRY_DELAY_MILLISECONDS,
+                        cancellationToken: cancellationToken);
+                }
+            }
         }
 
         private static async UniTask<FusionPeer> StartPeerAsync(
@@ -64,6 +90,7 @@ namespace NavalBattles.Runtime.UnityIntegration.Fusion
             return new StartGameArgs
             {
                 GameMode = gameMode,
+                Config = LoadNetworkConfig(),
                 SessionName = settings.sessionName,
                 PlayerCount = PLAYER_COUNT,
                 Scene = CreateSceneInfo(settings.sceneBuildIndex),
@@ -73,6 +100,24 @@ namespace NavalBattles.Runtime.UnityIntegration.Fusion
                 IsVisible = false,
                 StartGameCancellationToken = cancellationToken
             };
+        }
+
+        private static NetworkProjectConfig LoadNetworkConfig()
+        {
+            NetworkProjectConfigAsset configAsset =
+                Resources.Load<NetworkProjectConfigAsset>(NETWORK_CONFIG_RESOURCE_PATH);
+#if UNITY_EDITOR
+            configAsset ??= AssetDatabase.LoadAssetAtPath<NetworkProjectConfigAsset>(
+                NETWORK_CONFIG_ASSET_PATH);
+#endif
+
+            if (configAsset == null)
+            {
+                throw new InvalidOperationException(
+                    $"Fusion network config was not found in Resources/{NETWORK_CONFIG_RESOURCE_PATH}.");
+            }
+
+            return configAsset.Config;
         }
 
         private static NetworkRunner CreateRunner(string name)
@@ -108,7 +153,7 @@ namespace NavalBattles.Runtime.UnityIntegration.Fusion
         private static void EnsureStarted(StartGameResult result, GameMode gameMode)
         {
             if (result.Ok == false)
-                throw new InvalidOperationException($"Fusion {gameMode} failed: {result.ShutdownReason}.");
+                throw new FusionStartException(gameMode, result.ShutdownReason);
         }
 
         private static async UniTask CleanupFailedStartAsync(
@@ -122,6 +167,17 @@ namespace NavalBattles.Runtime.UnityIntegration.Fusion
 
             if (runner)
                 UnityEngine.Object.Destroy(runner.gameObject);
+        }
+
+        private sealed class FusionStartException : InvalidOperationException
+        {
+            public ShutdownReason shutdownReason { get; }
+
+            public FusionStartException(GameMode gameMode, ShutdownReason shutdownReason)
+                : base($"Fusion {gameMode} failed: {shutdownReason}.")
+            {
+                this.shutdownReason = shutdownReason;
+            }
         }
     }
 }

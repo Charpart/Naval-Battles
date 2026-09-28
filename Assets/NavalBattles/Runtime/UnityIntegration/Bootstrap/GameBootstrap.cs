@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using NavalBattles.Runtime.Client;
 using NavalBattles.Runtime.Client.Identity;
 using NavalBattles.Runtime.Domain.Configuration;
+using NavalBattles.Runtime.Server;
 using NavalBattles.Runtime.Transport.Diagnostics;
 using NavalBattles.Runtime.Transport.Simulation;
 using NavalBattles.Runtime.UnityIntegration.Configuration;
@@ -31,6 +32,7 @@ namespace NavalBattles.Runtime.UnityIntegration.Bootstrap
 
         public GameProcessRole role => _role;
         public GameClient client => _clientRuntime?.client;
+        public GameServer server => _serverRuntime?.server;
         public ulong serverRevision => _serverRuntime?.server.stateRevision ?? 0;
         public int connectedPlayerCount => _serverRuntime?.server.connectedPlayerCount ?? 0;
         public double currentTime => _currentTime;
