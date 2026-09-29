@@ -11,6 +11,7 @@ namespace NavalBattles.Runtime.UnityIntegration.Presentation.Views
         [SerializeField] private Button _restartButton;
         [SerializeField] private Toggle _messageLogToggle;
         [SerializeField] private GameObject _messageLogContainer;
+        [SerializeField] private ScrollRect _messageLogScrollRect;
         [SerializeField] private Text _messageLogText;
 
         public event Action<bool> connectionChanged;
@@ -50,6 +51,9 @@ namespace NavalBattles.Runtime.UnityIntegration.Presentation.Views
                 _messageLogText.text = _messageLogText.text.Substring(
                     _messageLogText.text.Length - MaxCharacters);
             }
+
+            Canvas.ForceUpdateCanvases();
+            _messageLogScrollRect.verticalNormalizedPosition = 0f;
         }
 
         public void SetActiveState()

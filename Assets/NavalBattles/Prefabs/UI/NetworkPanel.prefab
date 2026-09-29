@@ -1987,6 +1987,7 @@ GameObject:
   - component: {fileID: 4045110672937305272}
   - component: {fileID: 1263508770958187851}
   - component: {fileID: 5186899743759939990}
+  - component: {fileID: 6793321622115854320}
   m_Layer: 0
   m_Name: Entries
   m_TagString: Untagged
@@ -2008,11 +2009,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 5424420554803960254}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -16, y: -8}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_SizeDelta: {x: -16, y: 0}
+  m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &1263508770958187851
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2055,6 +2056,20 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 
+--- !u!114 &6793321622115854320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4517624009600335468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
+  m_HorizontalFit: 0
+  m_VerticalFit: 2
 --- !u!1 &4584526999321471694
 GameObject:
   m_ObjectHideFlags: 0
@@ -3568,6 +3583,8 @@ GameObject:
   - component: {fileID: 9158990411583984735}
   - component: {fileID: 5752621792415841383}
   - component: {fileID: 399021986087992931}
+  - component: {fileID: 1268799948742062238}
+  - component: {fileID: 6845915464022187797}
   m_Layer: 0
   m_Name: Message Log
   m_TagString: Untagged
@@ -3653,6 +3670,50 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &1268799948742062238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7247510604992840149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RectMask2D
+  m_Padding: {x: 0, y: 0, z: 0, w: 0}
+  m_Softness: {x: 0, y: 0}
+--- !u!114 &6845915464022187797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7247510604992840149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1aa08ab6e0800fa44ae55d278d1423e3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ScrollRect
+  m_Content: {fileID: 4045110672937305272}
+  m_Horizontal: 0
+  m_Vertical: 1
+  m_MovementType: 2
+  m_Elasticity: 0.1
+  m_Inertia: 1
+  m_DecelerationRate: 0.135
+  m_ScrollSensitivity: 1
+  m_Viewport: {fileID: 5424420554803960254}
+  m_HorizontalScrollbar: {fileID: 0}
+  m_VerticalScrollbar: {fileID: 0}
+  m_HorizontalScrollbarVisibility: 0
+  m_VerticalScrollbarVisibility: 0
+  m_HorizontalScrollbarSpacing: -3
+  m_VerticalScrollbarSpacing: -3
+  m_OnValueChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &7380808990007353573
 GameObject:
   m_ObjectHideFlags: 0
@@ -3873,6 +3934,7 @@ MonoBehaviour:
   _restartButton: {fileID: 7901723663824614617}
   _messageLogToggle: {fileID: 3431879591240965026}
   _messageLogContainer: {fileID: 7247510604992840149}
+  _messageLogScrollRect: {fileID: 6845915464022187797}
   _messageLogText: {fileID: 5186899743759939990}
 --- !u!1 &7928323265216962220
 GameObject:

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fusion.Realtime.dll::Fusion.Photon.Realtime.PhotonAppSettings
   AppSettings:
     AppIdRealtime: 
-    AppIdFusion: fcf3fefd-4384-4769-867d-860a5aaa8a23
+    AppIdFusion: 43be81eb-7dfa-43b5-9b58-813599de99bc
     AppIdQuantum: 
     AppIdChat: 
     AppIdVoice: 
