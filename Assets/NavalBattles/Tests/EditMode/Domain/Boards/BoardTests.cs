@@ -43,6 +43,45 @@ namespace NavalBattles.Tests.EditMode.Domain.Boards
         }
 
         [Test]
+        public void TryShoot_WhenShipIsSunk_MarksSurroundingWaterAsMisses()
+        {
+            // Arrange
+            const int width = 4;
+            var shipIndicesByCell = new sbyte[]
+            {
+                -1, -1, -1, -1,
+                -1,  0,  0, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1
+            };
+            var ships = new[] { new ShipState(2, 0) };
+            var board = new Board(width, 4, shipIndicesByCell, ships);
+            int[] expectedMisses = { 0, 1, 2, 3, 4, 7, 8, 9, 10, 11 };
+            int[] expectedUntouched = { 12, 13, 14, 15 };
+            board.TryShoot(5, out ShotOutcome firstOutcome);
+
+            // Act
+            bool wasAccepted = board.TryShoot(6, out ShotOutcome outcome);
+
+            // Assert
+            Assert.That(firstOutcome.result, Is.EqualTo(ShotResult.Hit));
+            Assert.That(wasAccepted, Is.True);
+            Assert.That(outcome.result, Is.EqualTo(ShotResult.Sunk));
+            Assert.That(board.GetCellShotState(5), Is.EqualTo(CellShotState.Hit));
+            Assert.That(board.GetCellShotState(6), Is.EqualTo(CellShotState.Hit));
+
+            foreach (int cellIndex in expectedMisses)
+            {
+                Assert.That(board.GetCellShotState(cellIndex), Is.EqualTo(CellShotState.Miss));
+            }
+
+            foreach (int cellIndex in expectedUntouched)
+            {
+                Assert.That(board.GetCellShotState(cellIndex), Is.EqualTo(CellShotState.None));
+            }
+        }
+
+        [Test]
         public void TryShoot_WhenCellWasAlreadyShot_ReturnsFalse()
         {
             // Arrange

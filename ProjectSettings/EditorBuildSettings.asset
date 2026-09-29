@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/NavalBattles/Scenes/Game.unity
+    guid: f06e3f358c486df4e841f8a302661fa2
+  - enabled: 1
     path: Assets/NavalBattles/Scenes/NetworkPeer.unity
     guid: 14e88221c94248b8bd882ec11a8b0205
   m_configObjects:

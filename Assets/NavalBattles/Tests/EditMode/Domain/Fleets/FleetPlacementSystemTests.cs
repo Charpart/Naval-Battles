@@ -56,7 +56,24 @@ namespace NavalBattles.Tests.EditMode.Domain.Fleets
             }
         }
 
-        private static GameRules CreateRules()
+        [Test]
+        public void TryCreateBoard_WithValidRules_LeavesWaterBetweenShips()
+        {
+            // Arrange
+            GameRules rules = CreateRules();
+
+            for (int seed = 1; seed <= 128; seed++)
+            {
+                // Act
+                bool wasCreated = FleetPlacementSystem.TryCreateBoard(rules, seed, out Board board);
+
+                // Assert
+                Assert.That(wasCreated, Is.True);
+                Assert.That(HasAdjacentShips(board), Is.False, $"Seed {seed} placed ships next to each other.");
+            }
+        }
+
+        private GameRules CreateRules()
         {
             int[] shipLengths = { 3, 2, 2, 1 };
             bool wasCreated = GameRules.TryCreate(
@@ -68,8 +85,47 @@ namespace NavalBattles.Tests.EditMode.Domain.Fleets
                 out GameRulesValidationError error);
 
             Assert.That(wasCreated, Is.True, error.ToString());
-
             return rules;
+        }
+
+        private bool HasAdjacentShips(Board board)
+        {
+            for (int cellIndex = 0; cellIndex < board.totalCellCount; cellIndex++)
+            {
+                int shipIndex = board.GetShipIndex(cellIndex);
+                if (shipIndex < 0 || HasAdjacentShip(board, cellIndex, shipIndex) == false)
+                    continue;
+
+                return true;
+            }
+            return false;
+        }
+
+        private bool HasAdjacentShip(Board board, int cellIndex, int shipIndex)
+        {
+            int cellX = cellIndex % board.width;
+            int cellY = cellIndex / board.width;
+
+            for (int offsetY = -1; offsetY <= 1; offsetY++)
+            {
+                for (int offsetX = -1; offsetX <= 1; offsetX++)
+                {
+                    int adjacentX = cellX + offsetX;
+                    int adjacentY = cellY + offsetY;
+
+                    if ((offsetX == 0 && offsetY == 0) ||
+                        adjacentX < 0 || adjacentX >= board.width ||
+                        adjacentY < 0 || adjacentY >= board.height)
+                    {
+                        continue;
+                    }
+
+                    int adjacentShipIndex = board.GetShipIndex(adjacentY * board.width + adjacentX);
+                    if (adjacentShipIndex >= 0 && adjacentShipIndex != shipIndex)
+                        return true;
+                }
+            }
+            return false;
         }
     }
 }

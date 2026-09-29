@@ -59,7 +59,7 @@ namespace NavalBattles.Runtime.Domain.Fleets
             {
                 Placement placement = placements[placementIndex];
 
-                if (CanPlace(placement, shipLength, shipIndicesByCell) == false)
+                if (CanPlace(placement, shipLength, rules.width, shipIndicesByCell) == false)
                 {
                     continue;
                 }
@@ -107,20 +107,51 @@ namespace NavalBattles.Runtime.Domain.Fleets
             return placements;
         }
 
-        private static bool CanPlace(Placement placement, int shipLength, sbyte[] shipIndicesByCell)
+        private static bool CanPlace(
+            Placement placement,
+            int shipLength,
+            int boardWidth,
+            sbyte[] shipIndicesByCell)
         {
             int cellIndex = placement.startCellIndex;
 
             for (int shipCellIndex = 0; shipCellIndex < shipLength; shipCellIndex++)
             {
-                if (shipIndicesByCell[cellIndex] != EMPTY_CELL)
-                {
+                if (IsSurroundedByWater(cellIndex, boardWidth, shipIndicesByCell) == false)
                     return false;
-                }
 
                 cellIndex += placement.step;
             }
+            return true;
+        }
 
+        private static bool IsSurroundedByWater(
+            int cellIndex,
+            int boardWidth,
+            sbyte[] shipIndicesByCell)
+        {
+            int boardHeight = shipIndicesByCell.Length / boardWidth;
+            int cellX = cellIndex % boardWidth;
+            int cellY = cellIndex / boardWidth;
+
+            for (int offsetY = -1; offsetY <= 1; offsetY++)
+            {
+                for (int offsetX = -1; offsetX <= 1; offsetX++)
+                {
+                    int adjacentX = cellX + offsetX;
+                    int adjacentY = cellY + offsetY;
+
+                    if (adjacentX < 0 || adjacentX >= boardWidth ||
+                        adjacentY < 0 || adjacentY >= boardHeight)
+                    {
+                        continue;
+                    }
+
+                    int adjacentCellIndex = adjacentY * boardWidth + adjacentX;
+                    if (shipIndicesByCell[adjacentCellIndex] != EMPTY_CELL)
+                        return false;
+                }
+            }
             return true;
         }
 

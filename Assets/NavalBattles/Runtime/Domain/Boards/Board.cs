@@ -78,7 +78,45 @@ namespace NavalBattles.Runtime.Domain.Boards
             ShotResult result = updatedShip.isSunk ? ShotResult.Sunk : ShotResult.Hit;
             outcome = new ShotOutcome(result, shipIndex, updatedShip.length);
 
+            if (updatedShip.isSunk)
+                MarkSurroundingWaterAsMisses(shipIndex);
+
             return true;
+        }
+
+        private void MarkSurroundingWaterAsMisses(int shipIndex)
+        {
+            for (int cellIndex = 0; cellIndex < _shipIndexByCell.Length; cellIndex++)
+            {
+                if (_shipIndexByCell[cellIndex] == shipIndex)
+                    MarkAdjacentWaterAsMisses(cellIndex);
+            }
+        }
+
+        private void MarkAdjacentWaterAsMisses(int cellIndex)
+        {
+            int cellX = cellIndex % width;
+            int cellY = cellIndex / width;
+
+            for (int offsetY = -1; offsetY <= 1; offsetY++)
+            {
+                for (int offsetX = -1; offsetX <= 1; offsetX++)
+                {
+                    int adjacentX = cellX + offsetX;
+                    int adjacentY = cellY + offsetY;
+
+                    if (adjacentX < 0 || adjacentX >= width || adjacentY < 0 || adjacentY >= height)
+                        continue;
+
+                    int adjacentCellIndex = adjacentY * width + adjacentX;
+
+                    if (_shipIndexByCell[adjacentCellIndex] == NO_SHIP &&
+                        _shots[adjacentCellIndex] == CellShotState.None)
+                    {
+                        _shots[adjacentCellIndex] = CellShotState.Miss;
+                    }
+                }
+            }
         }
 
         private bool IsCellIndexValid(int cellIndex)
