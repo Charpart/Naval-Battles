@@ -33,7 +33,7 @@ namespace NavalBattles.Runtime.UnityIntegration.Bootstrap
         private bool _isShuttingDown;
         private bool _isStarted;
 
-        private readonly ClientIdentityStore processClientIdentity = new ClientIdentityStore(Guid.NewGuid());
+        private IClientIdentityStore _clientIdentity;
         
         private GameProcessRole role { get; set; }
 
@@ -61,6 +61,18 @@ namespace NavalBattles.Runtime.UnityIntegration.Bootstrap
             }
 
             role = resolvedRole;
+
+            string identityRoot = Application.isEditor ? projectRoot : Application.persistentDataPath;
+            
+            if (role == GameProcessRole.Client 
+                && LocalInstanceRoleConfiguration.TryCreateClientIdentityStore
+                    (identityRoot, out _clientIdentity, out error) == false)
+            {
+                Debug.LogError(error, this);
+                enabled = false;
+                return;
+            }
+
             ConfigureUi();
             StartGameAsync().Forget();
         }
@@ -179,7 +191,7 @@ namespace NavalBattles.Runtime.UnityIntegration.Bootstrap
 
             return role == GameProcessRole.Server
                 ? new GameBootstrap(settings, GameProcessRole.Server)
-                : new GameBootstrap(settings, GameProcessRole.Client, processClientIdentity);
+                : new GameBootstrap(settings, GameProcessRole.Client, _clientIdentity);
         }
 
         private ClientNetworkSettings CreateClientNetworkSettings()
