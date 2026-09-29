@@ -124,6 +124,15 @@ namespace NavalBattles.Runtime.UnityIntegration.Presentation.Presenters
             PlayerSnapshot snapshot,
             NetworkPlayerSlot player)
         {
+            if (player == _client.player)
+            {
+                if (_client.connectionState == ClientConnectionState.Disconnected)
+                    return PlayerGameStatus.Disconnected;
+
+                if (_client.connectionState == ClientConnectionState.Reconnecting)
+                    return PlayerGameStatus.Reconnecting;
+            }
+
             if (snapshot.winner != NetworkPlayerSlot.None)
             {
                 return snapshot.winner == player

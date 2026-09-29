@@ -35,6 +35,8 @@ namespace NavalBattles.Runtime.UnityIntegration.Presentation.Views
                 PlayerGameStatus.WaitingTurn => "Waiting for turn",
                 PlayerGameStatus.Winner => "Winner",
                 PlayerGameStatus.Loser => "Loser",
+                PlayerGameStatus.Disconnected => "Disconnected",
+                PlayerGameStatus.Reconnecting => "Reconnecting",
                 _ => "Waiting"
             };
         }
